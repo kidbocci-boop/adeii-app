@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AquiDei - Luanda</title>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <!-- Estilos -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="phone-container">
+    <!-- Toast de Notificações -->
+    <div id="toast" class="toast">Ação efetuada</div>
+
+    <!-- Ecrã Splash Screen -->
+    <div id="screen-splash" class="screen active">
+        <div class="splash-wrapper">
+            <div class="brand-logo-box splash-logo-anim">
+                <div class="brand-icon-inner">
+                    <i class="fa-solid fa-location-arrow"></i>
+                </div>
+            </div>
+            <h1 class="brand-title">Aqui<span>Dei</span></h1>
+            <p>A sua viagem, à sua maneira em Luanda</p>
+            <div class="splash-loader">
+                <div class="splash-loader-bar"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Ecrã de Autenticação / Boas-Vindas -->
+    <div id="screen-auth" class="screen">
+        <div class="auth-wrapper">
+            <div class="brand-section">
+                <div class="brand-logo-box">
+                    <div class="brand-icon-inner">
+                        <i class="fa-solid fa-location-arrow"></i>
+                    </div>
+                </div>
+                <h1 class="brand-title">Aqui<span>Dei</span></h1>
+                <p>Mobilidade & Logística em Luanda</p>
+            </div>
+
+            <div class="auth-tabs">
+                <button class="tab-btn active" onclick="switchAuthTab('login')">Entrar</button>
+                <button class="tab-btn" onclick="switchAuthTab('register')">Criar Conta</button>
+            </div>
+
+            <div id="form-login" class="auth-form active">
+                <div class="input-field">
+                    <label>Telemóvel ou E-mail</label>
+                    <input type="text" id="login-user" placeholder="ex: 923456789 ou email@ex.com">
+                </div>
+                <div class="input-field">
+                    <label>Palavra-passe</label>
+                    <input type="password" id="login-pass" placeholder="••••••••">
+                </div>
+                <button class="btn-main" onclick="fazerLogin()">Entrar na Conta</button>
+                <button class="btn-text-link" onclick="abrirRecuperarPassword()">Esqueceu a palavra-passe?</button>
+            </div>
+
+            <div id="form-register" class="auth-form">
+                <div class="input-field">
+                    <label>Nome Completo</label>
+                    <input type="text" id="reg-name" placeholder="Ex: António Manuel">
+                </div>
+                <div class="input-field">
+                    <label>E-mail</label>
+                    <input type="email" id="reg-email" placeholder="antonio@ex.com">
+                </div>
+                <div class="input-field">
+                    <label>Número de Telemóvel</label>
+                    <div class="phone-row">
+                        <span class="prefix">+244</span>
+                        <input type="tel" id="reg-phone" placeholder="923 456 789" maxlength="9">
+                    </div>
+                </div>
+                <div class="input-field">
+                    <label>Criar Palavra-passe</label>
+                    <input type="password" id="reg-pass" placeholder="Mínimo 6 caracteres">
+                </div>
+                <button class="btn-main" onclick="fazerRegisto()">Concluir Cadastro</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Ecrã de Recuperação de Password -->
+    <div id="screen-forgot" class="screen">
+        <div class="top-navigation">
+            <button class="back-pill" onclick="mudarEcrã('screen-auth')"><i class="fa-solid fa-arrow-left"></i></button>
+            <h2>Recuperar Acesso</h2>
+        </div>
+        <div class="auth-wrapper">
+            <p class="sub-info" style="margin-bottom: 16px;">Introduza o seu número de telemóvel registado para receber instruções de recuperação.</p>
+            <div class="input-field" style="margin-bottom: 16px;">
+                <label>Telemóvel</label>
+                <div class="phone-row">
+                    <span class="prefix">+244</span>
+                    <input type="tel" id="forgot-phone" placeholder="923 456 789" maxlength="9">
+                </div>
+            </div>
+            <button class="btn-main" onclick="enviarRecuperacao()">Enviar Instruções</button>
+        </div>
+    </div>
+
+    <!-- Ecrã Home & Mapa (Passageiro) -->
+    <div id="screen-home" class="screen">
+        <div id="map"></div>
+        
+        <div class="sheet-card">
+            <div class="sheet-header">
+                <div>
+                    <span class="greeting-text">Olá, <strong id="user-display-name">Utilizador</strong></span>
+                    <h2>Para onde vais?</h2>
+                </div>
+                <div class="header-actions">
+                    <button class="icon-pill" onclick="abrirNotificacoes()" title="Notificações"><i class="fa-solid fa-bell"></i><span class="notification-badge-dot"></span></button>
+                    <button class="icon-pill" onclick="abrirCarteira()" title="Carteira AquiDei Pay"><i class="fa-solid fa-wallet"></i></button>
+                    <button class="icon-pill" onclick="abrirHistoricoViagens()" title="Histórico"><i class="fa-solid fa-clock-rotate-left"></i></button>
+                    <button class="icon-pill" onclick="abrirPerfil()" title="Perfil"><i class="fa-solid fa-user"></i></button>
+                </div>
+            </div>
+            
+            <div class="location-picker">
+                <div class="loc-row">
+                    <i class="fa-solid fa-circle-dot dot-origin"></i>
+                    <select id="origin-select" class="clean-select"></select>
+                    <button class="gps-inline-btn" onclick="usarGeolocalizacaoAtual()" title="Usar meu GPS atual"><i class="fa-solid fa-location-crosshairs"></i></button>
+                </div>
+                <div class="loc-divider"></div>
+                <div class="loc-row">
+                    <i class="fa-solid fa-location-dot dot-dest"></i>
+                    <select id="destination-select" class="clean-select"></select>
+                </div>
+            </div>
+
+            <button class="btn-main" onclick="calcularViagem()">Avançar para Tarifas</button>
+        </div>
+    </div>
+
+    <!-- Ecrã de Tarifas, Gorjetas Livres, Cupões e Preferências -->
+    <div id="screen-quote" class="screen">
+        <div class="top-navigation">
+            <button class="back-pill" onclick="voltarHome()"><i class="fa-solid fa-arrow-left"></i></button>
+            <h2>Escolhe o Serviço</h2>
+        </div>
+        <p id="route-info" class="sub-info">Kinaxixi ➔ Talatona</p>
+
+        <div class="options-stack">
+            <div class="service-card selected" onclick="selecionarOpcao(this, 1500, 'AquiDei Moto')">
+                <div class="service-icon"><i class="fa-solid fa-motorcycle"></i></div>
+                <div class="service-details">
+                    <strong>AquiDei Moto</strong>
+                    <p>Mais rápido • Trânsito livre</p>
+                </div>
+                <span class="service-price" id="price-moto">1.500 Kz</span>
+            </div>
+
+            <div class="service-card" onclick="selecionarOpcao(this, 3500, 'AquiDei Carro')">
+                <div class="service-icon"><i class="fa-solid fa-car"></i></div>
+                <div class="service-details">
+                    <strong>AquiDei Carro</strong>
+                    <p>Conforto e ar condicionado</p>
+                </div>
+                <span class="service-price" id="price-car">3.500 Kz</span>
+            </div>
+        </div>
+
+        <div class="section-label">Código Promocional</div>
+        <div class="promo-box-row">
+            <input type="text" id="promo-input" placeholder="Ex: AQUIDEDE2026">
+            <button class="btn-secondary" style="width: 90px;" onclick="aplicarCupao()">Aplicar</button>
+        </div>
+
+        <div class="section-label">Adicionar Gorjeta</div>
+        <div class="tip-pills">
+            <button class="tip-pill active" onclick="selecionarGorjeta(this, 0)">0 Kz</button>
+            <button class="tip-pill" onclick="selecionarGorjeta(this, 200)">200 Kz</button>
+            <button class="tip-pill" onclick="selecionarGorjeta(this, 500)">500 Kz</button>
+            <input type="number" id="custom-tip-input" class="tip-custom-input" placeholder="Outro" oninput="selecionarGorjetaCustom(this)">
+        </div>
+
+        <div class="section-label">Preferências de Viagem</div>
+        <div class="pref-row" onclick="togglePref(this)">
+            <i class="fa-solid fa-volume-xmark"></i>
+            <span>Viagem Silenciosa</span>
+            <div class="mini-toggle"></div>
+        </div>
+
+        <div class="section-label">Método de Pagamento</div>
+        <div class="payment-pills">
+            <button class="pay-pill active" onclick="selecionarPagamento(this, 'Dinheiro')"><i class="fa-solid fa-money-bill-wave"></i> Dinheiro</button>
+            <button class="pay-pill" onclick="selecionarPagamento(this, 'Carteira')"><i class="fa-solid fa-wallet"></i> AquiDei Pay</button>
+            <button class="pay-pill" onclick="selecionarPagamento(this, 'MCX Express')"><i class="fa-solid fa-mobile-screen-button"></i> MCX</button>
+        </div>
+
+        <button class="btn-main" style="margin-top: 10px;" onclick="pedirViagem()">Confirmar Pedido</button>
+    </div>
+
+    <!-- Ecrã Live Tracking & Partilha de Viagem -->
+    <div id="screen-tracking" class="screen">
+        <div id="map-tracking"></div>
+        <div class="sheet-card">
+            <div class="driver-minimal-card">
+                <div class="driver-avatar-circle"><i class="fa-solid fa-user"></i></div>
+                <div class="driver-meta">
+                    <strong id="driver-name">Hélder Silva</strong>
+                    <p id="driver-car">Toyota Corolla • Branco • 4.9 <i class="fa-solid fa-star" style="color:#fbbf24;"></i></p>
+                </div>
+                <div class="driver-calls">
+                    <button class="mini-icon-btn" onclick="showToast('A ligar para o motorista...')"><i class="fa-solid fa-phone"></i></button>
+                    <button class="mini-icon-btn" onclick="abrirChat()"><i class="fa-solid fa-comment"></i></button>
+                </div>
+            </div>
+
+            <div class="tracking-status-box">
+                <h3 id="tracking-status">A procurar condutor próximo...</h3>
+                <p id="tracking-sub">O motorista está a aproximar-se da origem</p>
+            </div>
+
+            <div class="tracking-buttons">
+                <button class="btn-secondary btn-amber" onclick="partilharViagemWhatsApp()"><i class="fa-brands fa-whatsapp"></i> Partilhar</button>
+                <button class="btn-secondary btn-red" onclick="cancelarViagem()">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Ecrã de Chat com o Motorista -->
+    <div id="screen-chat" class="screen">
+        <div class="top-navigation">
+            <button class="back-pill" onclick="fecharChat()"><i class="fa-solid fa-arrow-left"></i></button>
+            <h2>Chat com Hélder (Condutor)</h2>
+        </div>
+        <div class="chat-messages-box" id="chat-box">
+            <div class="chat-bubble driver-msg">Olá! Estou a caminho da sua localização.</div>
+        </div>
+        <div class="chat-input-area">
+            <input type="text" id="chat-input" placeholder="Escreva uma mensagem...">
+            <button class="chat-send-btn" onclick="enviarMensagemChat()"><i class="fa-solid fa-paper-plane"></i></button>
+        </div>
+    </div>
+
+    <!-- Ecrã Carteira Digital ("AquiDei Pay" Avançada) -->
+    <div id="screen-wallet" class="screen">
+        <div class="top-navigation">
+            <button class="back-pill" onclick="voltarHome()"><i class="fa-solid fa-arrow-left"></i></button>
+            <h2>AquiDei Pay</h2>
+        </div>
+        <div class="wallet-balance-card">
+            <span>Saldo Disponível</span>
+            <h1 id="wallet-balance-val">12.500 Kz</h1>
+            <div class="wallet-action-row">
+                <button class="btn-main" onclick="abrirModalCarregar()"><i class="fa-solid fa-plus"></i> Carregar</button>
+                <button class="btn-secondary" onclick="abrirModalTransferir()"><i class="fa-solid fa-paper-plane"></i> Enviar</button>
+            </div>
+        </div>
+
+        <div class="wallet-filters-row">
+            <button class="filter-chip active" onclick="filtrarCarteira('todos', this)">Todas</button>
+            <button class="filter-chip" onclick="filtrarCarteira('entrada', this)">Entradas</button>
+            <button class="filter-chip" onclick="filtrarCarteira('saida', this)">Saídas</button>
+        </div>
+
+        <div class="scroll-list" id="wallet-history"></div>
+    </div>
+
+    <!-- Modal / Vista para Carregar via Referência Multicaixa -->
+    <div id="screen-wallet-load" class="screen">
+        <div class="top-navigation">
+            <button class="back-pill" onclick="abrirCarteira()"><i class="fa-solid fa-arrow-left"></i></button>
+            <h2>Carregar Saldo (Multicaixa)</h2>
+        </div>
+        <div class="auth-wrapper" style="justify-content: flex-start; gap: 14px;">
+            <div class="input-field">
+                <label>Valor a Carregar (Kz)</label>
+                <input type="number" id="load-amount-input" placeholder="Ex: 5000">
+            </div>
+            <button class="btn-main" onclick="gerarReferenciaMCX()">Gerar Referência ATM / BAI Directo</button>
+            
+            <div id="mcx-ref-box" style="display:none; background: var(--surface); border: 1px solid var(--accent); border-radius: 16px; padding: 16px; margin-top: 10px; text-align: center;">
+                <span style="font-size: 11px; color: var(--muted); text-transform: uppercase;">Dados para Pagamento</span>
+                <div style="margin: 10px 0; font-size: 13px;">Entidade: <strong>00129</strong></div>
+                <div style="margin: 10px 0; font-size: 13px;">Referência: <strong id="txt-ref-num" style="color:var(--accent);">982 451 320</strong></div>
+                <div style="margin: 10px 0; font-size: 13px;">Valor: <strong id="txt-ref-val">5.000 Kz</strong></div>
+                <button class="btn-secondary btn-amber" style="margin-top: 8px; width:100%;" onclick="simularPagamentoReferenciaConcluido()">Simular Pagamento Efetuado</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal / Vista para Transferir P2P (Enviar a amigo) -->
+    <div id="screen-wallet-transfer" class="screen">
+        <div class="top-navigation">
+            <button class="back-pill" onclick="abrirCarteira()"><i class="fa-solid fa-arrow-left"></i></button>
+            <h2>Enviar para Amigo</h2>
+        </div>
+        <div class="auth-wrapper" style="justify-content: flex-start; gap: 14px;">
+            <div class="input-field">
+                <label>Telemóvel do Destinatário</label>
+                <div class="phone-row">
+                    <span class="prefix">+244</span>
+                    <input type="tel" id="transfer-phone" placeholder="923 000 000" maxlength="9">
+                </div>
+            </div>
+            <div class="input-field">
+                <label>Valor a Enviar (Kz)</label>
+                <input type="number" id="transfer-amount" placeholder="Ex: 2000">
+            </div>
+            <div class="input-field">
+                <label>PIN de Segurança (4 Dígitos)</label>
+                <input type="password" id="transfer-pin" placeholder="••••" maxlength="4">
+            </div>
+            <button class="btn-main" onclick="executarTransferenciaP2P()">Confirmar Transferência</button>
+        </div>
+    </div>
+
+    <!-- Ecrã de Notificações -->
+    <div id="screen-notifications" class="screen">
+        <div class="top-navigation">
+            <button class="back-pill" onclick="voltarHome()"><i class="fa-solid fa-arrow-left"></i></button>
+            <h2>Notificações</h2>
+        </div>
+        <div class="scroll-list" id="notifications-list"></div>
+    </div>
+
+    <!-- Ecrã Modo Condutor (Painel do Motorista) -->
+    <div id="screen-driver-mode" class="screen">
+        <div class="top-navigation">
+            <button class="back-pill" onclick="voltarHome()"><i class="fa-solid fa-arrow-left"></i></button>
+            <h2>Painel do Motorista</h2>
+        </div>
+        <div class="driver-status-toggle-box">
+            <span>Estado Atual: <strong id="driver-status-text" style="color:var(--success);">Online (À procura)</strong></span>
+            <button class="btn-secondary btn-amber" onclick="alternarEstadoMotorista()">Alternar Estado</button>
+        </div>
+        <div class="section-label">Corridas Disponíveis na Zona</div>
+        <div class="scroll-list" id="driver-rides-list">
+            <div class="history-row" style="flex-direction: column; align-items: flex-start; gap: 8px;">
+                <div style="display:flex; justify-content:space-between; width:100%;">
+                    <strong>Kinaxixi ➔ Talatona</strong>
+                    <span style="color:var(--accent); font-weight:700;">3.500 Kz</span>
+                </div>
+                <span style="font-size:11px; color:var(--muted);">Passageiro: António M. • Avaliação 4.8 ⭐</span>
+                <button class="btn-main" style="padding: 8px; font-size: 11px; margin-top: 4px;" onclick="aceitarCorridaMotorista()">Aceitar Corrida</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Ecrã de Avaliação Pós-Corrida -->
+    <div id="screen-rating" class="screen">
+        <div class="rating-wrapper">
+            <div class="success-badge"><i class="fa-solid fa-check"></i></div>
+            <h2>Chegaste ao Destino</h2>
+            <p class="sub-info" id="final-route-text">Esperamos que tenhas tido uma excelente viagem.</p>
+
+            <div class="fare-pill-box">
+                <span>Total pago (incl. gorjeta)</span>
+                <strong id="final-fare-val">3.500 Kz</strong>
+            </div>
+
+            <div class="section-label" style="text-align:center;">Avalia o teu motorista</div>
+            <div class="star-rating-row">
+                <i class="fa-solid fa-star active" onclick="setStar(1)"></i>
+                <i class="fa-solid fa-star active" onclick="setStar(2)"></i>
+                <i class="fa-solid fa-star active" onclick="setStar(3)"></i>
+                <i class="fa-solid fa-star active" onclick="setStar(4)"></i>
+                <i class="fa-solid fa-star active" onclick="setStar(5)"></i>
+            </div>
+
+            <input type="text" class="input-comment" placeholder="Deixa um elogio ou comentário...">
+            <button class="btn-main" onclick="concluirAvaliacao()">Concluir</button>
+        </div>
+    </div>
+
+    <!-- Ecrã de Histórico de Viagens -->
+    <div id="screen-history" class="screen">
+        <div class="top-navigation">
+            <button class="back-pill" onclick="voltarHome()"><i class="fa-solid fa-arrow-left"></i></button>
+            <h2>Histórico de Viagens</h2>
+        </div>
+        <div class="scroll-list" id="history-list"></div>
+    </div>
+
+    <!-- Ecrã de Perfil -->
+    <div id="screen-profile" class="screen">
+        <div class="top-navigation">
+            <button class="back-pill" onclick="voltarHome()"><i class="fa-solid fa-arrow-left"></i></button>
+            <h2>A Minha Conta</h2>
+        </div>
+        <div class="profile-box">
+            <div class="profile-big-avatar"><i class="fa-solid fa-user"></i></div>
+            <h3 id="prof-name">Nome do Utilizador</h3>
+            <p id="prof-phone">+244 000 000 000</p>
+        </div>
+        <div class="profile-options">
+            <div class="profile-row" onclick="mudarEcrã('screen-driver-mode')"><i class="fa-solid fa-car-side"></i> Mudar para Modo Motorista</div>
+            <div class="profile-row" onclick="showToast('Dados atualizados')"><i class="fa-solid fa-user-pen"></i> Editar Informações Pessoais</div>
+            <div class="profile-row logout-row" onclick="fazerLogout()"><i class="fa-solid fa-right-from-bracket"></i> Terminar Sessão</div>
+        </div>
+    </div>
+</div>
+
+<!-- Leaflet JS -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<!-- Script -->
+<script src="script.js"></script>
+</body>
+</html>
